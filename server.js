@@ -344,7 +344,8 @@ class MinesweeperGame {
             width: this.width,
             height: this.height,
             scores: this.scores,
-            maxPlayers: this.maxPlayers
+            maxPlayers: this.maxPlayers,
+            difficulty: this.difficulty
         };
     }
     

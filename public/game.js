@@ -627,13 +627,22 @@ class MultiplayerMinesweeper {
     
     restartGame() {
         if (this.currentGame) {
-            const difficulty = this.currentGame.difficulty || 'medium';
-            const maxPlayers = this.currentGame.maxPlayers || 4;
+            // Use the same settings as the current game
+            const game = this.currentGame;
+            const difficulty = game.difficulty || 'medium';
+            const maxPlayers = game.maxPlayers || 4;
             
             this.socket.emit('restart-game', { 
                 playerName: this.playerName, 
                 difficulty: difficulty,
                 maxPlayers: maxPlayers
+            });
+        } else {
+            // Fallback to default settings
+            this.socket.emit('restart-game', { 
+                playerName: this.playerName || 'Player', 
+                difficulty: 'medium',
+                maxPlayers: 4
             });
         }
     }

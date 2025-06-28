@@ -413,10 +413,12 @@ button:disabled {
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.9rem;
+    transition: all 0.3s ease;
 }
 
 .history-section button:hover {
     background: #5a67d8;
+    transform: translateY(-2px);
 }
 
 .history-container, .leaderboard-container, .replay-container {
