@@ -15,6 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Game state management
 const games = new Map();
 const lobbyUsers = new Set();
+const gameHistory = new Map(); // Store completed games for history/leaderboard
 
 class MinesweeperGame {
     constructor(gameId, difficulty = 'medium', maxPlayers = 2) {
@@ -25,6 +26,12 @@ class MinesweeperGame {
         this.currentPlayer = 0;
         this.scores = {};
         this.maxPlayers = maxPlayers;
+        
+        // Game history tracking
+        this.moves = []; // Track all moves for replay
+        this.startTime = null;
+        this.endTime = null;
+        this.difficulty = difficulty;
         
         // Difficulty settings
         const difficulties = {
@@ -134,6 +141,18 @@ class MinesweeperGame {
         const cell = this.board[row][col];
         if (cell.isRevealed || cell.isFlagged) return { success: false, reason: 'Cell not clickable' };
         
+        // Record the move
+        const moveTimestamp = Date.now();
+        this.moves.push({
+            type: 'reveal',
+            playerId,
+            playerName: this.players[playerIndex].playerName,
+            row,
+            col,
+            timestamp: moveTimestamp,
+            turn: this.moves.filter(m => m.type === 'reveal' || m.type === 'flag').length + 1
+        });
+        
         // Place mines on first click
         if (!this.minesPlaced) {
             this.placeMines(row, col);
@@ -152,6 +171,20 @@ class MinesweeperGame {
                 }
             }
             this.gameState = 'finished';
+            this.endTime = Date.now();
+            
+            // Record game end
+            this.moves.push({
+                type: 'game_end',
+                timestamp: this.endTime,
+                reason: 'mine_hit',
+                winner: this.getWinner(),
+                duration: this.endTime - this.startTime
+            });
+            
+            // Save to history
+            this.saveToHistory();
+            
             return { success: true, gameOver: true, winner: this.getWinner(), revealedCells };
         } else {
             // Reveal cell and potentially neighbors
@@ -165,6 +198,20 @@ class MinesweeperGame {
             // Check win condition
             if (this.checkWinCondition()) {
                 this.gameState = 'finished';
+                this.endTime = Date.now();
+                
+                // Record game end
+                this.moves.push({
+                    type: 'game_end',
+                    timestamp: this.endTime,
+                    reason: 'completed',
+                    winner: this.getWinner(),
+                    duration: this.endTime - this.startTime
+                });
+                
+                // Save to history
+                this.saveToHistory();
+                
                 return { success: true, gameWon: true, winner: this.getWinner(), revealedCells, pointsEarned };
             }
             
@@ -207,6 +254,18 @@ class MinesweeperGame {
         
         cell.isFlagged = !cell.isFlagged;
         
+        // Record the move
+        this.moves.push({
+            type: 'flag',
+            playerId,
+            playerName: this.players[playerIndex].playerName,
+            row,
+            col,
+            flagged: cell.isFlagged,
+            timestamp: Date.now(),
+            turn: this.moves.filter(m => m.type === 'reveal' || m.type === 'flag').length
+        });
+        
         // Next player's turn
         this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
         
@@ -237,6 +296,15 @@ class MinesweeperGame {
         if (this.players.length >= 2) {
             this.gameState = 'playing';
             this.gameStarted = true;
+            this.startTime = Date.now();
+            
+            // Record game start in moves
+            this.moves.push({
+                type: 'game_start',
+                timestamp: this.startTime,
+                players: [...this.players]
+            });
+            
             return true;
         }
         return false;
@@ -276,8 +344,29 @@ class MinesweeperGame {
             width: this.width,
             height: this.height,
             scores: this.scores,
-            maxPlayers: this.maxPlayers
+            maxPlayers: this.maxPlayers,
+            difficulty: this.difficulty
         };
+    }
+    
+    saveToHistory() {
+        const historyData = {
+            gameId: this.gameId,
+            players: [...this.players],
+            difficulty: this.difficulty,
+            startTime: this.startTime,
+            endTime: this.endTime,
+            duration: this.endTime - this.startTime,
+            winner: this.getWinner(),
+            moves: [...this.moves],
+            finalScores: {...this.scores},
+            width: this.width,
+            height: this.height,
+            mineCount: this.mineCount,
+            gameState: this.gameState
+        };
+        
+        gameHistory.set(this.gameId, historyData);
     }
 }
 
@@ -405,6 +494,74 @@ io.on('connection', (socket) => {
         }
         
         updateLobby();
+    });
+    
+    // Handle game history requests
+    socket.on('get-game-history', () => {
+        const history = Array.from(gameHistory.values())
+            .sort((a, b) => b.endTime - a.endTime) // Most recent first
+            .map(game => ({
+                gameId: game.gameId,
+                players: game.players.map(p => p.playerName),
+                difficulty: game.difficulty,
+                duration: game.duration,
+                winner: game.winner ? game.winner.playerName : 'No winner',
+                endTime: game.endTime,
+                moveCount: game.moves.filter(m => m.type === 'reveal' || m.type === 'flag').length
+            }));
+        
+        socket.emit('game-history', history);
+    });
+    
+    // Handle leaderboard requests
+    socket.on('get-leaderboard', (difficulty) => {
+        let completedGames = Array.from(gameHistory.values())
+            .filter(game => game.winner && game.moves.some(m => m.reason === 'completed'));
+        
+        if (difficulty && difficulty !== 'all') {
+            completedGames = completedGames.filter(game => game.difficulty === difficulty);
+        }
+        
+        const leaderboard = completedGames
+            .sort((a, b) => a.duration - b.duration) // Fastest first
+            .slice(0, 10) // Top 10
+            .map((game, index) => ({
+                rank: index + 1,
+                playerName: game.winner.playerName,
+                duration: game.duration,
+                difficulty: game.difficulty,
+                gameId: game.gameId,
+                endTime: game.endTime
+            }));
+        
+        socket.emit('leaderboard', leaderboard);
+    });
+    
+    // Handle replay requests
+    socket.on('get-replay', (gameId) => {
+        const gameData = gameHistory.get(gameId);
+        if (gameData) {
+            socket.emit('replay-data', gameData);
+        } else {
+            socket.emit('replay-error', 'Game not found');
+        }
+    });
+    
+    // Handle restart game requests
+    socket.on('restart-game', (data) => {
+        const { playerName, difficulty, maxPlayers } = data;
+        const gameId = generateGameId();
+        const game = new MinesweeperGame(gameId, difficulty, maxPlayers);
+        
+        if (game.addPlayer(socket.id, playerName)) {
+            games.set(gameId, game);
+            socket.join(gameId);
+            lobbyUsers.delete(socket.id);
+            
+            socket.emit('game-created', { gameId, game: game.getPublicGameState() });
+            updateLobby();
+            updateGameRoom(gameId);
+        }
     });
 });
 
