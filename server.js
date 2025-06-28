@@ -275,7 +275,8 @@ class MinesweeperGame {
             board: publicBoard,
             width: this.width,
             height: this.height,
-            scores: this.scores
+            scores: this.scores,
+            maxPlayers: this.maxPlayers
         };
     }
 }

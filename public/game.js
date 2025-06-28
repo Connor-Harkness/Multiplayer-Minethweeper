@@ -194,7 +194,7 @@ class MultiplayerMinesweeper {
         
         switch (gameState.gameState) {
             case 'waiting':
-                statusText = `Waiting for players... (${gameState.players.length}/4)`;
+                statusText = `Waiting for players... (${gameState.players.length}/${gameState.maxPlayers})`;
                 break;
             case 'playing':
                 const currentPlayer = gameState.players[gameState.currentPlayer];
