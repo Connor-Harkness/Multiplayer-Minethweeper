@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 45453;
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -17,7 +17,7 @@ const games = new Map();
 const lobbyUsers = new Set();
 
 class MinesweeperGame {
-    constructor(gameId, difficulty = 'medium', maxPlayers = 4) {
+    constructor(gameId, difficulty = 'medium', maxPlayers = 2) {
         this.gameId = gameId;
         this.players = [];
         this.spectators = [];
