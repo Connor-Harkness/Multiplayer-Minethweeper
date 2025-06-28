@@ -392,3 +392,125 @@ button:disabled {
         font-size: 2rem;
     }
 }
+
+/* History and Leaderboard Styles */
+.history-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.history-section h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+}
+
+.history-section button {
+    margin: 0 10px 10px 0;
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.history-section button:hover {
+    background: #5a67d8;
+}
+
+.history-container, .leaderboard-container, .replay-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.history-header, .leaderboard-header, .replay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.history-list, .leaderboard-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item, .leaderboard-item {
+    background: #f7fafc;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.history-item:hover, .leaderboard-item:hover {
+    background: #edf2f7;
+    transform: translateX(5px);
+}
+
+.history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.history-item-title {
+    font-weight: bold;
+    color: #4a5568;
+}
+
+.history-item-time {
+    font-size: 0.9rem;
+    color: #718096;
+}
+
+.history-item-details {
+    font-size: 0.9rem;
+    color: #718096;
+}
+
+.game-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.replay-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.replay-controls button {
+    padding: 8px 12px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.replay-controls button:hover {
+    background: #5a67d8;
+}
+
+.replay-info {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+#replay-progress {
+    font-weight: bold;
+    color: #4a5568;
+}

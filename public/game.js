@@ -24,6 +24,48 @@ class MultiplayerMinesweeper {
             this.startGame();
         });
         
+        document.getElementById('restart-game-btn').addEventListener('click', () => {
+            this.restartGame();
+        });
+        
+        // History and leaderboard events
+        document.getElementById('view-history-btn').addEventListener('click', () => {
+            this.showHistory();
+        });
+        
+        document.getElementById('view-leaderboard-btn').addEventListener('click', () => {
+            this.showLeaderboard();
+        });
+        
+        document.getElementById('back-to-lobby-from-history').addEventListener('click', () => {
+            this.showLobby();
+        });
+        
+        document.getElementById('back-to-lobby-from-leaderboard').addEventListener('click', () => {
+            this.showLobby();
+        });
+        
+        document.getElementById('back-to-history').addEventListener('click', () => {
+            this.showHistory();
+        });
+        
+        document.getElementById('leaderboard-difficulty').addEventListener('change', (e) => {
+            this.loadLeaderboard(e.target.value);
+        });
+        
+        // Replay controls
+        document.getElementById('replay-prev').addEventListener('click', () => {
+            this.replayPrevMove();
+        });
+        
+        document.getElementById('replay-next').addEventListener('click', () => {
+            this.replayNextMove();
+        });
+        
+        document.getElementById('replay-play-pause').addEventListener('click', () => {
+            this.toggleReplayPlayback();
+        });
+        
         // Enter key support for player name
         document.getElementById('player-name').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -71,6 +113,23 @@ class MultiplayerMinesweeper {
         
         this.socket.on('connect', () => {
             this.showNotification('Connected to server', 'success');
+        });
+        
+        // History and leaderboard listeners
+        this.socket.on('game-history', (history) => {
+            this.displayGameHistory(history);
+        });
+        
+        this.socket.on('leaderboard', (leaderboard) => {
+            this.displayLeaderboard(leaderboard);
+        });
+        
+        this.socket.on('replay-data', (gameData) => {
+            this.startReplay(gameData);
+        });
+        
+        this.socket.on('replay-error', (message) => {
+            this.showNotification(message, 'error');
         });
     }
     
@@ -154,11 +213,17 @@ class MultiplayerMinesweeper {
     showLobby() {
         document.getElementById('lobby-screen').classList.add('active');
         document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('history-screen').classList.remove('active');
+        document.getElementById('leaderboard-screen').classList.remove('active');
+        document.getElementById('replay-screen').classList.remove('active');
     }
     
     showGame() {
         document.getElementById('lobby-screen').classList.remove('active');
         document.getElementById('game-screen').classList.add('active');
+        document.getElementById('history-screen').classList.remove('active');
+        document.getElementById('leaderboard-screen').classList.remove('active');
+        document.getElementById('replay-screen').classList.remove('active');
     }
     
     updateLobby(data) {
@@ -219,15 +284,23 @@ class MultiplayerMinesweeper {
             document.getElementById('current-player').textContent = '';
         }
         
-        // Show/hide start button
+        // Show/hide start and restart buttons
         const startBtn = document.getElementById('start-game-btn');
+        const restartBtn = document.getElementById('restart-game-btn');
         const isGameCreator = gameState.players.length > 0 && gameState.players[0].socketId === this.playerId;
         const canStart = gameState.gameState === 'waiting' && gameState.players.length >= 2;
+        const gameFinished = gameState.gameState === 'finished';
         
         if (isGameCreator && canStart) {
             startBtn.style.display = 'block';
         } else {
             startBtn.style.display = 'none';
+        }
+        
+        if (gameFinished) {
+            restartBtn.style.display = 'block';
+        } else {
+            restartBtn.style.display = 'none';
         }
         
         // Update game board
@@ -346,6 +419,235 @@ class MultiplayerMinesweeper {
                 notification.parentNode.removeChild(notification);
             }
         }, 3000);
+    }
+    
+    // History and Leaderboard Methods
+    showHistory() {
+        document.getElementById('lobby-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('leaderboard-screen').classList.remove('active');
+        document.getElementById('replay-screen').classList.remove('active');
+        document.getElementById('history-screen').classList.add('active');
+        
+        this.socket.emit('get-game-history');
+    }
+    
+    showLeaderboard() {
+        document.getElementById('lobby-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('history-screen').classList.remove('active');
+        document.getElementById('replay-screen').classList.remove('active');
+        document.getElementById('leaderboard-screen').classList.add('active');
+        
+        const difficulty = document.getElementById('leaderboard-difficulty').value;
+        this.loadLeaderboard(difficulty);
+    }
+    
+    loadLeaderboard(difficulty) {
+        this.socket.emit('get-leaderboard', difficulty);
+    }
+    
+    displayGameHistory(history) {
+        const historyList = document.getElementById('history-list');
+        
+        if (history.length === 0) {
+            historyList.innerHTML = '<p>No games played yet.</p>';
+            return;
+        }
+        
+        historyList.innerHTML = history.map(game => `
+            <div class="history-item" onclick="game.requestReplay('${game.gameId}')">
+                <div class="history-item-header">
+                    <div class="history-item-title">Game ${game.gameId}</div>
+                    <div class="history-item-time">${new Date(game.endTime).toLocaleString()}</div>
+                </div>
+                <div class="history-item-details">
+                    Players: ${game.players.join(', ')} | 
+                    Winner: ${game.winner} | 
+                    Difficulty: ${game.difficulty} | 
+                    Duration: ${this.formatDuration(game.duration)} |
+                    Moves: ${game.moveCount}
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    displayLeaderboard(leaderboard) {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        
+        if (leaderboard.length === 0) {
+            leaderboardList.innerHTML = '<p>No completed games yet.</p>';
+            return;
+        }
+        
+        leaderboardList.innerHTML = leaderboard.map(entry => `
+            <div class="leaderboard-item" onclick="game.requestReplay('${entry.gameId}')">
+                <div class="history-item-header">
+                    <div class="history-item-title">#${entry.rank} ${entry.playerName}</div>
+                    <div class="history-item-time">${this.formatDuration(entry.duration)}</div>
+                </div>
+                <div class="history-item-details">
+                    Difficulty: ${entry.difficulty} | 
+                    Completed: ${new Date(entry.endTime).toLocaleDateString()}
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    requestReplay(gameId) {
+        this.socket.emit('get-replay', gameId);
+    }
+    
+    startReplay(gameData) {
+        this.replayData = gameData;
+        this.replayCurrentMove = 0;
+        this.replayPlaying = false;
+        this.replayInterval = null;
+        
+        document.getElementById('lobby-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('history-screen').classList.remove('active');
+        document.getElementById('leaderboard-screen').classList.remove('active');
+        document.getElementById('replay-screen').classList.add('active');
+        
+        this.updateReplayInfo();
+        this.updateReplayBoard();
+    }
+    
+    updateReplayInfo() {
+        const gameInfo = document.getElementById('replay-game-info');
+        const game = this.replayData;
+        
+        gameInfo.innerHTML = `
+            <strong>Game ${game.gameId}</strong><br>
+            Players: ${game.players.map(p => p.playerName).join(', ')}<br>
+            Difficulty: ${game.difficulty} (${game.width}x${game.height}, ${game.mineCount} mines)<br>
+            Duration: ${this.formatDuration(game.duration)}<br>
+            Winner: ${game.winner ? game.winner.playerName : 'No winner'}<br>
+            Final Scores: ${game.players.map(p => `${p.playerName}: ${p.score}`).join(', ')}
+        `;
+        
+        const playMoves = game.moves.filter(m => m.type === 'reveal' || m.type === 'flag');
+        document.getElementById('replay-progress').textContent = 
+            `Move ${this.replayCurrentMove} / ${playMoves.length}`;
+    }
+    
+    updateReplayBoard() {
+        const boardContainer = document.getElementById('replay-board');
+        const game = this.replayData;
+        
+        // Create a fresh board state
+        const board = Array(game.height).fill().map(() => 
+            Array(game.width).fill().map(() => ({
+                isRevealed: false,
+                isFlagged: false,
+                neighborMines: 0,
+                isMine: false
+            }))
+        );
+        
+        // Apply moves up to current position
+        const playMoves = game.moves.filter(m => m.type === 'reveal' || m.type === 'flag');
+        for (let i = 0; i < this.replayCurrentMove; i++) {
+            const move = playMoves[i];
+            if (move.type === 'reveal') {
+                board[move.row][move.col].isRevealed = true;
+            } else if (move.type === 'flag') {
+                board[move.row][move.col].isFlagged = move.flagged;
+            }
+        }
+        
+        // Set grid dimensions
+        boardContainer.style.gridTemplateColumns = `repeat(${game.width}, 1fr)`;
+        boardContainer.innerHTML = '';
+        
+        for (let row = 0; row < game.height; row++) {
+            for (let col = 0; col < game.width; col++) {
+                const cell = board[row][col];
+                const cellEl = document.createElement('div');
+                cellEl.className = 'cell';
+                
+                if (cell.isRevealed) {
+                    cellEl.classList.add('revealed');
+                    if (cell.isMine) {
+                        cellEl.classList.add('mine');
+                        cellEl.textContent = '💣';
+                    } else if (cell.neighborMines > 0) {
+                        cellEl.textContent = cell.neighborMines;
+                        cellEl.classList.add(`count-${cell.neighborMines}`);
+                    }
+                } else if (cell.isFlagged) {
+                    cellEl.classList.add('flagged');
+                    cellEl.textContent = '🚩';
+                }
+                
+                boardContainer.appendChild(cellEl);
+            }
+        }
+    }
+    
+    replayPrevMove() {
+        if (this.replayCurrentMove > 0) {
+            this.replayCurrentMove--;
+            this.updateReplayInfo();
+            this.updateReplayBoard();
+        }
+    }
+    
+    replayNextMove() {
+        const playMoves = this.replayData.moves.filter(m => m.type === 'reveal' || m.type === 'flag');
+        if (this.replayCurrentMove < playMoves.length) {
+            this.replayCurrentMove++;
+            this.updateReplayInfo();
+            this.updateReplayBoard();
+        }
+    }
+    
+    toggleReplayPlayback() {
+        const button = document.getElementById('replay-play-pause');
+        
+        if (this.replayPlaying) {
+            this.replayPlaying = false;
+            clearInterval(this.replayInterval);
+            button.textContent = '▶ Play';
+        } else {
+            this.replayPlaying = true;
+            button.textContent = '⏸ Pause';
+            
+            this.replayInterval = setInterval(() => {
+                this.replayNextMove();
+                
+                const playMoves = this.replayData.moves.filter(m => m.type === 'reveal' || m.type === 'flag');
+                if (this.replayCurrentMove >= playMoves.length) {
+                    this.toggleReplayPlayback();
+                }
+            }, 1000);
+        }
+    }
+    
+    restartGame() {
+        if (this.currentGame) {
+            const difficulty = this.currentGame.difficulty || 'medium';
+            const maxPlayers = this.currentGame.maxPlayers || 4;
+            
+            this.socket.emit('restart-game', { 
+                playerName: this.playerName, 
+                difficulty: difficulty,
+                maxPlayers: maxPlayers
+            });
+        }
+    }
+    
+    formatDuration(ms) {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        
+        if (minutes > 0) {
+            return `${minutes}m ${remainingSeconds}s`;
+        } else {
+            return `${remainingSeconds}s`;
+        }
     }
 }
 

@@ -44,6 +44,12 @@
                             <p>No games available</p>
                         </div>
                     </div>
+                    
+                    <div class="history-section">
+                        <h3>Game Features</h3>
+                        <button id="view-history-btn">Game History</button>
+                        <button id="view-leaderboard-btn">Leaderboard</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -58,7 +64,10 @@
                             <span id="game-status">Waiting for players...</span>
                         </div>
                     </div>
-                    <button id="leave-game-btn">Leave Game</button>
+                    <div class="game-controls">
+                        <button id="restart-game-btn" style="display: none;">Restart Game</button>
+                        <button id="leave-game-btn">Leave Game</button>
+                    </div>
                 </div>
                 
                 <div class="players-section">
@@ -70,6 +79,60 @@
                 <div class="game-board-container">
                     <div id="current-player" class="current-player-indicator"></div>
                     <div id="game-board" class="game-board"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Screen -->
+        <div id="history-screen" class="screen">
+            <div class="history-container">
+                <div class="history-header">
+                    <h2>Game History</h2>
+                    <button id="back-to-lobby-from-history">Back to Lobby</button>
+                </div>
+                <div id="history-list" class="history-list">
+                    <p>Loading history...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leaderboard Screen -->
+        <div id="leaderboard-screen" class="screen">
+            <div class="leaderboard-container">
+                <div class="leaderboard-header">
+                    <h2>Leaderboard</h2>
+                    <select id="leaderboard-difficulty">
+                        <option value="all">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                    <button id="back-to-lobby-from-leaderboard">Back to Lobby</button>
+                </div>
+                <div id="leaderboard-list" class="leaderboard-list">
+                    <p>Loading leaderboard...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Replay Screen -->
+        <div id="replay-screen" class="screen">
+            <div class="replay-container">
+                <div class="replay-header">
+                    <h2>Game Replay</h2>
+                    <div class="replay-controls">
+                        <button id="replay-prev">⏮ Prev</button>
+                        <button id="replay-play-pause">⏸ Pause</button>
+                        <button id="replay-next">⏭ Next</button>
+                        <span id="replay-progress">Move 0 / 0</span>
+                    </div>
+                    <button id="back-to-history">Back to History</button>
+                </div>
+                <div class="replay-info">
+                    <div id="replay-game-info"></div>
+                </div>
+                <div class="game-board-container">
+                    <div id="replay-board" class="game-board"></div>
                 </div>
             </div>
         </div>
