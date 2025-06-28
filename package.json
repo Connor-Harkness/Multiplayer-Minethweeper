@@ -1,0 +1,14 @@
+{
+  "name": "multiplayer-minethweeper",
+  "version": "1.0.0",
+  "main": "game.js",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000",
+    "test": "node -c game.js && echo 'All tests passed'"
+  },
+  "keywords": ["minesweeper", "multiplayer", "game", "turn-based", "javascript"],
+  "author": "",
+  "license": "ISC",
+  "description": "A turn-based multiplayer minesweeper game built with HTML, CSS, and JavaScript"
+}

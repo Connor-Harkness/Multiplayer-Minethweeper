@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Minesweeper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Multiplayer Minesweeper</h1>
+        
+        <div class="game-info">
+            <div class="current-player">
+                Current Player: <span id="current-player">Player 1</span>
+            </div>
+            <div class="game-stats">
+                <div class="mines-count">Mines: <span id="mines-count">10</span></div>
+                <div class="score">
+                    <div>Player 1 Score: <span id="player1-score">0</span></div>
+                    <div>Player 2 Score: <span id="player2-score">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-controls">
+            <button id="new-game-btn">New Game</button>
+            <button id="difficulty-btn">Change Difficulty (Easy)</button>
+        </div>
+
+        <div class="game-board" id="game-board">
+            <!-- Game cells will be generated here -->
+        </div>
+
+        <div class="game-status" id="game-status">
+            Click a cell to start the game!
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
