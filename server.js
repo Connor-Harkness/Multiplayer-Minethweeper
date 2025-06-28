@@ -17,13 +17,14 @@ const games = new Map();
 const lobbyUsers = new Set();
 
 class MinesweeperGame {
-    constructor(gameId, difficulty = 'medium') {
+    constructor(gameId, difficulty = 'medium', maxPlayers = 4) {
         this.gameId = gameId;
         this.players = [];
         this.spectators = [];
         this.gameState = 'waiting'; // waiting, playing, finished
         this.currentPlayer = 0;
         this.scores = {};
+        this.maxPlayers = maxPlayers;
         
         // Difficulty settings
         const difficulties = {
@@ -99,7 +100,7 @@ class MinesweeperGame {
     }
     
     addPlayer(socketId, playerName) {
-        if (this.players.length < 4) { // Max 4 players
+        if (this.players.length < this.maxPlayers) {
             this.players.push({ socketId, playerName, score: 0 });
             this.scores[socketId] = 0;
             return true;
@@ -290,9 +291,9 @@ io.on('connection', (socket) => {
     
     // Handle creating a new game
     socket.on('create-game', (data) => {
-        const { playerName, difficulty } = data;
+        const { playerName, difficulty, maxPlayers } = data;
         const gameId = generateGameId();
-        const game = new MinesweeperGame(gameId, difficulty);
+        const game = new MinesweeperGame(gameId, difficulty, maxPlayers);
         
         if (game.addPlayer(socket.id, playerName)) {
             games.set(gameId, game);
@@ -418,7 +419,7 @@ function updateLobby() {
             .map(game => ({
                 gameId: game.gameId,
                 players: game.players.length,
-                maxPlayers: 4
+                maxPlayers: game.maxPlayers
             }))
     };
     

@@ -77,6 +77,7 @@ class MultiplayerMinesweeper {
     createGame() {
         const playerNameInput = document.getElementById('player-name');
         const difficultySelect = document.getElementById('difficulty-select');
+        const maxPlayersSelect = document.getElementById('max-players-select');
         
         const playerName = playerNameInput.value.trim();
         if (!playerName) {
@@ -92,8 +93,9 @@ class MultiplayerMinesweeper {
         
         this.playerName = playerName;
         const difficulty = difficultySelect.value;
+        const maxPlayers = parseInt(maxPlayersSelect.value);
         
-        this.socket.emit('create-game', { playerName, difficulty });
+        this.socket.emit('create-game', { playerName, difficulty, maxPlayers });
     }
     
     joinGame(gameId) {
