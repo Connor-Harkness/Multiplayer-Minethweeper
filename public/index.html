@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Minesweeper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="screen active">
+            <div class="lobby-container">
+                <h1>🎯 Multiplayer Minesweeper</h1>
+                <div class="lobby-stats">
+                    <p>Players online: <span id="online-count">0</span></p>
+                    <p>Available games: <span id="games-count">0</span></p>
+                </div>
+                
+                <div class="lobby-actions">
+                    <div class="create-game-section">
+                        <h3>Create New Game</h3>
+                        <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+                        <select id="difficulty-select">
+                            <option value="easy">Easy (8x8, 10 mines)</option>
+                            <option value="medium" selected>Medium (12x12, 25 mines)</option>
+                            <option value="hard">Hard (16x16, 50 mines)</option>
+                        </select>
+                        <button id="create-game-btn">Create Game</button>
+                    </div>
+                    
+                    <div class="join-game-section">
+                        <h3>Join Existing Game</h3>
+                        <div id="available-games">
+                            <p>No games available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-container">
+                <div class="game-header">
+                    <div class="game-info">
+                        <h2>Game: <span id="game-id"></span></h2>
+                        <div class="game-status">
+                            <span id="game-status">Waiting for players...</span>
+                        </div>
+                    </div>
+                    <button id="leave-game-btn">Leave Game</button>
+                </div>
+                
+                <div class="players-section">
+                    <h3>Players</h3>
+                    <div id="players-list"></div>
+                    <button id="start-game-btn" style="display: none;">Start Game</button>
+                </div>
+                
+                <div class="game-board-container">
+                    <div id="current-player" class="current-player-indicator"></div>
+                    <div id="game-board" class="game-board"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Messages/Notifications -->
+    <div id="notifications"></div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
